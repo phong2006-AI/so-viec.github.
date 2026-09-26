@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sổ Việc</title>
+<style>
+  :root{
+    --bg: #F4F6F1;
+    --paper: #FFFFFF;
+    --ink: #1F2E22;
+    --ink-soft: #5B6B5E;
+    --line: #DCE3D8;
+    --accent: #3D6B4C;
+    --accent-soft: #E3EEE4;
+    --danger: #B3462F;
+    --danger-soft: #F6E4DF;
+    --focus: #3D74B6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% 42px;
+    background-color: var(--bg);
+    font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+    color: var(--ink);
+    display:flex;
+    justify-content:center;
+    padding: 48px 20px 80px;
+  }
+  .sheet{
+    width:100%;
+    max-width: 620px;
+  }
+  header{
+    margin-bottom: 28px;
+  }
+  .kicker{
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0 0 4px;
+  }
+  h1{
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 40px;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+  .add-row{
+    display:flex;
+    gap:10px;
+    margin: 28px 0 6px;
+  }
+  #taskInput{
+    flex:1;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    background: transparent;
+    font-size: 17px;
+    padding: 10px 4px;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  #taskInput::placeholder{ color: #9AA79C; }
+  #taskInput:focus{
+    outline: none;
+    border-bottom-color: var(--focus);
+  }
+  #addBtn{
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    padding: 0 22px;
+    font-size: 15px;
+    border-radius: 6px;
+    cursor:pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  #addBtn:hover{ background: var(--accent); }
+  #addBtn:active{ transform: scale(0.97); }
+
+  .error{
+    min-height: 20px;
+    color: var(--danger);
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .filters{
+    display:flex;
+    gap: 18px;
+    margin: 18px 0 14px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+  }
+  .filter-btn{
+    border:none;
+    background:none;
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor:pointer;
+    padding: 4px 2px;
+    position:relative;
+  }
+  .filter-btn.active{
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .filter-btn.active::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:-11px;
+    height:2px;
+    background: var(--accent);
+  }
+
+  ul#list{
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  li.task{
+    display:flex;
+    align-items:flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .checkbox{
+    width: 20px; height:20px;
+    border-radius: 5px;
+    border: 2px solid var(--ink-soft);
+    flex: none;
+    margin-top: 2px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: var(--paper);
+  }
+  .checkbox.checked{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-size: 13px;
+  }
+  .task-text{
+    flex:1;
+    font-size: 16px;
+    line-height:1.4;
+    word-break: break-word;
+    cursor:default;
+  }
+  .task.completed .task-text{
+    color: var(--ink-soft);
+    text-decoration: line-through;
+  }
+  .del-btn{
+    border:none;
+    background:none;
+    color: var(--ink-soft);
+    cursor:pointer;
+    font-size: 18px;
+    line-height:1;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .del-btn:hover{ color: var(--danger); background: var(--danger-soft); }
+
+  .empty-state{
+    text-align:center;
+    padding: 50px 10px;
+    color: var(--ink-soft);
+  }
+  .empty-state .big{
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  #clearCompleted{
+    border:none;
+    background:none;
+    color: var(--danger);
+    cursor:pointer;
+    font-size: 13px;
+    text-decoration: underline;
+  }
+  #clearCompleted:disabled{
+    color: #C7CDC3;
+    cursor:default;
+    text-decoration:none;
+  }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <header>
+      <p class="kicker">Việc hôm nay</p>
+      <h1>Sổ Việc</h1>
+    </header>
+
+    <div class="add-row">
+      <input id="taskInput" type="text" placeholder="Thêm một việc cần làm…" maxlength="120" />
+      <button id="addBtn">Thêm</button>
+    </div>
+    <div class="error" id="errorMsg"></div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Tất cả</button>
+      <button class="filter-btn" data-filter="active">Đang làm</button>
+      <button class="filter-btn" data-filter="completed">Đã xong</button>
+    </div>
+
+    <ul id="list"></ul>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <p class="big">Chưa có việc nào</p>
+      <p>Thêm việc đầu tiên của bạn ở ô phía trên.</p>
+    </div>
+
+    <footer>
+      <span id="counter">0 việc còn lại</span>
+      <button id="clearCompleted">Xóa việc đã xong</button>
+    </footer>
+  </div>
+
+<script>
+  // In-memory state (no browser storage)
+  let tasks = [];
+  let idCounter = 1;
+  let currentFilter = "all";
+
+  const listEl = document.getElementById("list");
+  const inputEl = document.getElementById("taskInput");
+  const addBtn = document.getElementById("addBtn");
+  const errorEl = document.getElementById("errorMsg");
+  const counterEl = document.getElementById("counter");
+  const emptyStateEl = document.getElementById("emptyState");
+  const clearBtn = document.getElementById("clearCompleted");
+  const filterBtns = document.querySelectorAll(".filter-btn");
+
+  function addTask(){
+    const text = inputEl.value.trim();
+    errorEl.textContent = "";
+    if(!text){
+      errorEl.textContent = "Vui lòng nhập nội dung công việc.";
+      return;
+    }
+    if(text.length > 120){
+      errorEl.textContent = "Nội dung tối đa 120 ký tự.";
+      return;
+    }
+    tasks.push({ id: idCounter++, text: text, completed: false });
+    inputEl.value = "";
+    render();
+  }
+
+  function toggleTask(id){
+    const t = tasks.find(t => t.id === id);
+    if(t) t.completed = !t.completed;
+    render();
+  }
+
+  function deleteTask(id){
+    tasks = tasks.filter(t => t.id !== id);
+    render();
+  }
+
+  function clearCompleted(){
+    tasks = tasks.filter(t => !t.completed);
+    render();
+  }
+
+  function setFilter(filter){
+    currentFilter = filter;
+    filterBtns.forEach(b => b.classList.toggle("active", b.dataset.filter === filter));
+    render();
+  }
+
+  function render(){
+    let visible = tasks;
+    if(currentFilter === "active") visible = tasks.filter(t => !t.completed);
+    if(currentFilter === "completed") visible = tasks.filter(t => t.completed);
+
+    listEl.innerHTML = "";
+    visible.forEach(t => {
+      const li = document.createElement("li");
+      li.className = "task" + (t.completed ? " completed" : "");
+
+      const box = document.createElement("div");
+      box.className = "checkbox" + (t.completed ? " checked" : "");
+      box.textContent = t.completed ? "✓" : "";
+      box.addEventListener("click", () => toggleTask(t.id));
+
+      const span = document.createElement("span");
+      span.className = "task-text";
+      span.textContent = t.text;
+
+      const del = document.createElement("button");
+      del.className = "del-btn";
+      del.textContent = "✕";
+      del.setAttribute("aria-label", "Xóa việc");
+      del.addEventListener("click", () => deleteTask(t.id));
+
+      li.appendChild(box);
+      li.appendChild(span);
+      li.appendChild(del);
+      listEl.appendChild(li);
+    });
+
+    emptyStateEl.style.display = visible.length === 0 ? "block" : "none";
+    listEl.style.display = visible.length === 0 ? "none" : "block";
+
+    const remaining = tasks.filter(t => !t.completed).length;
+    counterEl.textContent = remaining + " việc còn lại";
+
+    clearBtn.disabled = tasks.every(t => !t.completed);
+  }
+
+  addBtn.addEventListener("click", addTask);
+  inputEl.addEventListener("keydown", e => { if(e.key === "Enter") addTask(); });
+  clearBtn.addEventListener("click", clearCompleted);
+  filterBtns.forEach(b => b.addEventListener("click", () => setFilter(b.dataset.filter)));
+
+  render();
+</script>
+</body>
+</html>
